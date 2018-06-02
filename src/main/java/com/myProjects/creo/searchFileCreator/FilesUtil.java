@@ -8,10 +8,7 @@ import java.net.URISyntaxException;
 import java.nio.file.*;
 import java.util.*;
 
-public class FilesUtil {
-
-//    public static TreeSet<Path> folders;
-
+class FilesUtil {
 
     public static Path getPath(String str) {
 
@@ -20,15 +17,15 @@ public class FilesUtil {
 
 
     @org.jetbrains.annotations.Nullable
-    public static TreeSet<Path> getFoldersTreeSet(Path dir) {
+    static TreeSet<Path> getFoldersTreeSet(Path dir) {
 
-        TreeSet<Path> dirs = null;
+        TreeSet<Path> dirs;
         FileWalker walker = new FileWalker();
 
         try {
             Files.walkFileTree(dir, walker);
             dirs = walker.getFolders();
-            dirs.pollFirst();
+            dirs.pollFirst();                   //remove initial path
             return dirs;
 
         } catch (IOException e) {
@@ -41,9 +38,9 @@ public class FilesUtil {
     }
 
 
-    //TODO: public static void writeToSearchFile(TreeSet<Path> folders, Path root)
-    public static void writeToSearchFile(TreeSet<Path> folders, Path root) {
+    static void writeToSearchFile(TreeSet<Path> folders, Path root) {
 
+        //Path to a new search.pro file in the root directory
         Path fileToWrite = Paths.get(root.toAbsolutePath() + File.separator + "search.pro");
 
         if (!Files.exists(fileToWrite)) {
@@ -60,32 +57,56 @@ public class FilesUtil {
                 BufferedWriter writer = new BufferedWriter(new FileWriter(fileToWrite.toAbsolutePath().toString()));
 
                 for (Path path : folders) {
-                    writer.write("search_path " + path.toAbsolutePath().toString() + "\n");
+                    writer.write("search_path \"" + path.toAbsolutePath().toString() + "\"\r\n");
                     writer.flush();
                 }
 
                 writer.close();
+
+                System.out.println("*** SEARCH.PRO FILE HAS BEEN CREATED! ***");
 
             } catch (IOException e) {
                 e.printStackTrace();
 
             }
 
+        } else {
+            //great explanation
+            System.out.println("*** SEARCH.PRO FILE HASN'T BEEN CREATED IN SOME REASONS ***");
         }
 
 
     }
 
-    //TODO: public static Path getLocationPath()
-    public static Path getLocationPath() throws URISyntaxException {
 
-        File file = new File(SearchFileCreator.class.getProtectionDomain().getCodeSource().getLocation().toURI().getPath());
+    static Path getLocationPath() throws URISyntaxException {
 
-        return Paths.get(file.getAbsolutePath()).getParent();
+        //getting path to a executed .jar file
+        File file = new File(SearchFileCreator.class.getProtectionDomain().getCodeSource()
+                .getLocation().toURI().getPath());
+
+        //getting path to executed .jar file's directory
+        Path path = Paths.get(file.getAbsolutePath()).getParent();
+
+        //correct path if jar has been executed from "\\Server..." location
+        if (path.toString().startsWith("\\\\")) {
+//            System.out.println("*** The file is on a server! ***\n");
+
+            String str = path.toString();
+            str = str.substring(0, path.toString().indexOf(path.getFileName().toString())
+                    + path.getFileName().toString().length());
+
+//            System.out.println("Corrected directory path is: " + str);
+
+            path = Paths.get(str);
+        }
+
+        return path;
 
     }
 
     //TODO: public static void updateConfigFile()
+    //Do I need it? I think no)
 
 
 }
